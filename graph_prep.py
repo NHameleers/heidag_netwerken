@@ -1,23 +1,43 @@
 import networkx as nx
 import json
+import pandas as pd
+
+def get_vaste_staf_namelist(excelfile):
+    namen = pd.read_excel(excelfile, sheet_name='Sheet1')
+
+    return list(namen['Volledige naam'].values)
+
+VASTE_STAF_NAMEN = get_vaste_staf_namelist('Data/HSR Vaste staf 01-05-2022.XLSX')
+
+
+
+
+def check_if_vaste_staf(naam, vaste_staf_namen=VASTE_STAF_NAMEN):
+
+    return naam in vaste_staf_namen
+
+
 
 
 def add_nodes(G, nodejson):
     for n in nodejson:
 
-        if 'health services research' in n['properties']['name'].lower():
+        node_name = n['properties']['name']
+
+        if 'health services research' in node_name.lower():
             continue
 
-        c = 'green'
-        if 'stoffers' in n['properties']['name'].lower():
-            c = 'red'
+        # voeg node alleen toe als het vaste staf betreft
+        if check_if_vaste_staf(node_name):
 
-        G.add_node(n['id'],
-        label=n['properties']['name'],
-        color=c)
+            G.add_node(n['id'],
+            label=node_name) # kleur kan met color='blue'
 
 
     return G
+
+
+
 
 def add_edges(G, edgejson):
 
@@ -25,45 +45,47 @@ def add_edges(G, edgejson):
 
         from_id = e['from']['id']
         to_id = e['to']['id']
-
-        # one node is added to the graph after adding all edges, but I cannot find out which one that is
-        try:
-            G[from_id]
-        except KeyError:
-            print(f"from_id of {e['from']['properties']['name']} not in nodes")
-
-        try:
-            G[to_id]
-        except KeyError:
-            print(f"to_id of {e['to']['properties']['name']} not in nodes")
-
+        from_name = e['from']['properties']['name']
+        to_name = e['to']['properties']['name']
 
         # cleaning (HSR itself does not need to be an edge)
-        if 'health services research' in from_id.lower().strip():
+        if 'health services research' in from_name.lower():
             continue
 
-        if 'health services research' in to_id.lower().strip():
+        if 'health services research' in to_name.lower():
             continue
 
-        G.add_edge(from_id, to_id, weight=e['label'] )
+        # voeg edge alleen toe als deze van een vaste staf persoon naar een vaste staf persoon gaat
+        if check_if_vaste_staf(from_name) and check_if_vaste_staf(to_name):
+            G.add_edge(from_id, to_id, weight=e['label'] )
 
     return G
 
 
-def create_graph():
 
-    with open('Data/2020_2021_HSR_publications.json', 'r') as infile:
+# def save_names(G, nodejson):
+
+#     namelist = [name['properties']['name'] for name in nodejson]
+
+#     pd.DataFrame(namelist, columns=['naam']).to_csv('Data/namelist.csv', index=False)
+
+
+
+
+def create_graph(json_filename):
+
+    with open(json_filename, 'r', encoding='utf-8') as infile:
         d = json.load(infile)
 
     G = nx.Graph()
 
-    G = add_nodes(G, d['nodes'][:3])
+    G = add_nodes(G, d['nodes'])
 
-    G = add_edges(G, d['edges'][:3])
+    G = add_edges(G, d['edges'])
 
     return G
 
 
 
 
-
+    

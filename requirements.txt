@@ -5,3 +5,4 @@ altair==4.1.0
 streamlit==1.0.0
 networkx==2.6.3
 pyvis==0.2.1
+openpyxl==3.0.10
