@@ -1,0 +1,5 @@
+Data/
+__pycache__/
+tmp/
+html_files/
+env/
