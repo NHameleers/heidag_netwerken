@@ -1,3 +1,17 @@
+### TODO ###
+
+# 3 jaar samen hetzelfde blok organiseren telt ook 3 keer mee voor de edge weight
+
+# blokken in tooltip van node
+# aantal unieke blokken --> node size
+
+# namen van blokken waarin wordt samengewerkt in edge tooltip
+
+
+
+
+
+
 from venv import create
 
 import random
@@ -27,6 +41,9 @@ with st.sidebar:
     'Onderwijs'
     onderwijs_kleur = st.selectbox(label='Kleur de nodes naar...:',
     options=['Geen indeling', 'Onderzoekslijn', 'Academische Werkplaats', 'Research Unit', 'GW'])
+
+    onderwijs_jaar = st.selectbox(label='Jaar:',
+    options=['Alle jaren', '2019-2020', '2020-2021', '2021-2022'])
 
 
 
@@ -82,10 +99,10 @@ components.html(HtmlFile.read(), height=600, width=1000)
 '''Samenwerking op gebied van onderwijs in de jaren 2019 t/m 2022. Samenwerking is gedefiniëerd als samen in de blokplanningsgroep zitten voor een blok.'''
 
 
-H = gp.create_onderwijs_graph('Data/onderwijs.csv')
+H = gp.create_onderwijs_graph('Data/onderwijs.csv', onderwijs_jaar=onderwijs_jaar)
 
 if onderwijs_kleur is not 'Geen indeling':
-    gp.kleur_nodes_volgens_kolom(H, onderwijs_kleur, naam_kolom='OnderwijsNaam')
+    gp.kleur_nodes_volgens_kolom(H, onderwijs_kleur)
 
 
 onderwijs_net = Network(height='600px', width='1000px', bgcolor='white', font_color='black')

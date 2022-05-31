@@ -48,13 +48,16 @@ def add_nodes(G, nodejson):
     return G
 
 
-def add_nodes_voor_vaste_staf_nog_niet_in_netwerk(G, vaste_staf_namen=VASTE_STAF_NAMEN):
+def add_nodes_voor_vaste_staf_nog_niet_in_netwerk(G, size=None, vaste_staf_namen=VASTE_STAF_NAMEN):
 
     # Voeg ook mensen toe die wel in vaste staf zitten maar niet in netwerk voorkomen (omdat geen onderzoek of onderwijs)
     namen_in_netwerk = [G.nodes[id]['label'] for id in G.nodes]
     niet_in_netwerk = [naam for naam in vaste_staf_namen if naam not in namen_in_netwerk]
     for staflid in niet_in_netwerk:
-        G.add_node(staflid, label=staflid, shape='square')
+        if size:
+            G.add_node(staflid, label=staflid, shape='square', size=size)
+        else:
+            G.add_node(staflid, label=staflid, shape='square')
 
     return G
 
@@ -77,7 +80,8 @@ def add_edges(G, edgejson):
 
         # voeg edge alleen toe als deze van een vaste staf persoon naar een vaste staf persoon gaat
         if check_if_vaste_staf(from_name) and check_if_vaste_staf(to_name):
-            G.add_edge(from_id, to_id, weight=e['label'] )
+            w = e['label']
+            G.add_edge(from_id, to_id, value=w, title=f"{w} gezamenlijke publicaties", color='grey')
 
     return G
 
@@ -104,17 +108,56 @@ def create_onderzoek_graph(json_filename):
 
 ########## ONDERWIJS GRAPH
 
+def maak_units_tooltip_voor_naam(naam, onderwijs):
+    onderwijs_gegeven_door_naam = onderwijs[onderwijs.Naam == naam].copy()
+    units_tooltip = ''
+    if not onderwijs_gegeven_door_naam.empty:
+        units = sorted([f'{unit} ({jaar})' for unit, jaar in zip(onderwijs_gegeven_door_naam.Unit.values, onderwijs_gegeven_door_naam.Year.values)])
+        n_units = len(onderwijs_gegeven_door_naam.Unit.unique())
+        units_tooltip = f"{n_units} uniek(e) blok(ken):\n" + "\n".join(units)
 
-def create_onderwijs_graph(filename):
+    return units_tooltip
+
+
+def maak_units_tooltip_voor_samenwerking(from_naam, to_naam, onderwijs):
+
+    # haal units op van beide namen
+    onderwijs_from_naam = onderwijs.loc[onderwijs.Naam == from_naam, 'UnitYear'].values
+    onderwijs_to_naam = onderwijs.loc[onderwijs.Naam == to_naam, 'UnitYear'].values
+
+    unityear_set = set(onderwijs_from_naam) & set(onderwijs_to_naam)
+
+    formatted_list = []
+
+    # nice format: from Unit_Year to Unit (Year)
+    if unityear_set:
+        formatted_list = sorted([f"{unityear[:-5]} ({unityear[-4:]})" for unityear in unityear_set])
+    
+    tooltip = f"{len(unityear_set)} samenwerkingen:\n" + "\n".join(formatted_list)
+
+    return tooltip
+    
+
+def create_onderwijs_graph(filename, onderwijs_jaar):
 
     onderwijs = pd.read_csv(filename)
+
+    if onderwijs_jaar != 'Alle jaren':
+        jaar = int(onderwijs_jaar[:4])
+        onderwijs = onderwijs[onderwijs.Year == jaar]
+
 
     G = nx.Graph()
 
     ### NODES
     stafnamen = onderwijs.Naam.unique()
     for naam in stafnamen:
-        G.add_node(naam, label=naam, shape='dot')
+        
+        units_tooltip = maak_units_tooltip_voor_naam(naam, onderwijs)
+
+        
+
+        G.add_node(naam, label=naam, shape='dot', title=units_tooltip)
 
     G = add_nodes_voor_vaste_staf_nog_niet_in_netwerk(G)
 
@@ -139,7 +182,8 @@ def create_onderwijs_graph(filename):
     
     # dan kunnen we de edges toevoegen aan de graph
     for k, v in count_alle_samenwerkingen.items():
-        G.add_edge(k[0], k[1], weight=v)
+        samenwerking_units_tooltip = maak_units_tooltip_voor_samenwerking(k[0], k[1], onderwijs)
+        G.add_edge(k[0], k[1], weight=v, value=v, title=samenwerking_units_tooltip, color='grey')
 
     return G
 
@@ -150,7 +194,6 @@ def kleur_nodes_volgens_kolom(G, kolom_kleur, naam_kolom='Volledige naam', vaste
     # unieke waarden in kolom
     # kleur per unieke waarde
     kleurdict = {waarde: kleurcodes[i] for i, waarde in enumerate(vaste_staf_df[kolom_kleur].unique())}
-    print(kleurdict)
 
     # bereid dictionary voor met id: kleur pairs
     node_kleuren = {}
