@@ -3,28 +3,13 @@ import json
 import pandas as pd
 from itertools import combinations
 from collections import Counter
-
+import namen_prep
+import streamlit as st
 
 HSR_COLORS = ['#001C3D', '#E84E10', '#00A2DB', '#F8B296', '#F8884A', '#005370', '#ABD1FF', '#A1360B']
-
 VASTE_STAF_DF = pd.read_excel('Data/HSR Vaste staf 01-05-2022.XLSX', sheet_name='Sheet1')
+VASTE_STAF_NAMEN = namen_prep.get_vaste_staf_namelist('Data/HSR Vaste staf 01-05-2022.XLSX')
 
-def get_vaste_staf_namelist(excelfile, naam_kolom='Volledige naam'):
-    namen = pd.read_excel(excelfile, sheet_name='Sheet1')
-
-    return list(namen[naam_kolom].dropna().values)
-
-VASTE_STAF_NAMEN = get_vaste_staf_namelist('Data/HSR Vaste staf 01-05-2022.XLSX')
-
-
-def check_if_vaste_staf(naam, vaste_staf_namen=VASTE_STAF_NAMEN):
-
-    return naam in vaste_staf_namen
-
-def check_if_vaste_staf_achternaam(achternaam, vaste_staf_namen=VASTE_STAF_NAMEN):
-    vaste_staf_achternamen = [naam.split(' ')[-1] for naam in vaste_staf_namen]
-
-    return achternaam in vaste_staf_achternamen
 
 
 
@@ -40,18 +25,17 @@ def add_nodes(G, nodejson):
             continue
 
         # voeg node alleen toe als het vaste staf betreft
-        if check_if_vaste_staf(node_name):
+        if namen_prep.check_if_vaste_staf(node_name):
 
-            G.add_node(n['id'],
+            G.add_node(node_name,
             label=node_name) # kleur kan met color='blue'
         
     return G
 
-
 def add_nodes_voor_vaste_staf_nog_niet_in_netwerk(G, size=None, vaste_staf_namen=VASTE_STAF_NAMEN):
 
     # Voeg ook mensen toe die wel in vaste staf zitten maar niet in netwerk voorkomen (omdat geen onderzoek of onderwijs)
-    namen_in_netwerk = [G.nodes[id]['label'] for id in G.nodes]
+    namen_in_netwerk = [naam for naam in G.nodes]
     niet_in_netwerk = [naam for naam in vaste_staf_namen if naam not in namen_in_netwerk]
     for staflid in niet_in_netwerk:
         if size:
@@ -62,12 +46,30 @@ def add_nodes_voor_vaste_staf_nog_niet_in_netwerk(G, size=None, vaste_staf_namen
     return G
 
 
+
+def add_node_attributes(G, vaste_staf_df=VASTE_STAF_DF):
+
+    # set_node_attributes takes a dict of dicts {id: {"attr1": "value1", "attr2": "value2"}}
+
+    node_attr_dict = dict()
+
+    for i, row in vaste_staf_df.iterrows():
+        node_attr_dict[row['Volledige naam']] = {'Geen indeling': '',
+        'Onderzoekslijn': row['Onderzoekslijn'],
+        'Research Unit': row['Research Unit'],
+        'Academische Werkplaats': row['Academische Werkplaats']}
+
+    nx.set_node_attributes(G, node_attr_dict)
+
+    return G
+
+
+
+
 def add_edges(G, edgejson):
 
     for e in edgejson:
 
-        from_id = e['from']['id']
-        to_id = e['to']['id']
         from_name = e['from']['properties']['name']
         to_name = e['to']['properties']['name']
 
@@ -79,16 +81,36 @@ def add_edges(G, edgejson):
             continue
 
         # voeg edge alleen toe als deze van een vaste staf persoon naar een vaste staf persoon gaat
-        if check_if_vaste_staf(from_name) and check_if_vaste_staf(to_name):
+        if namen_prep.check_if_vaste_staf(from_name) and namen_prep.check_if_vaste_staf(to_name):
             w = e['label']
-            G.add_edge(from_id, to_id, value=w, title=f"{w} gezamenlijke publicaties", color='grey')
+            G.add_edge(from_name, to_name, value=w, title=f"{w} gezamenlijke publicatie(s)", color='grey')
 
     return G
 
 
+def add_edge_attributes(G, organisatie_eenheid):
+    '''Neemt een edge en checkt of beide nodes bij dezelfde organisatie_eenheid werken.
+    Set vervolgens is_inner en is_outer attribute op 0 (verschillende organisatie_eenheid)
+     of 1 (voor gelijke organisatie_eenheid)'''
+    
+    edge_attr_dict = dict()
+    
+    for edge in G.edges:
+        from_affiliation = G.nodes[edge[0]][organisatie_eenheid]
+        print(f'from affiliation of edge {edge}: {from_affiliation}')
+        to_affiliation = G.nodes[edge[1]][organisatie_eenheid]
+        if from_affiliation == to_affiliation:
+            edge_attr_dict[edge] = {'is_inner': 1, 'is_outer': 0}
+        else:
+            edge_attr_dict[edge] = {'is_inner': 0, 'is_outer': 1}
+
+    nx.set_edge_attributes(G, edge_attr_dict)
+    
+    return G
 
 
-def create_onderzoek_graph(json_filename):
+
+def create_onderzoek_graph(json_filename, organisatie_eenheid):
 
     with open(json_filename, 'r', encoding='utf-8') as infile:
         d = json.load(infile)
@@ -99,8 +121,15 @@ def create_onderzoek_graph(json_filename):
     
     G = add_nodes_voor_vaste_staf_nog_niet_in_netwerk(G)
 
+    G = add_node_attributes(G, vaste_staf_df=VASTE_STAF_DF)
+
     G = add_edges(G, d['edges'])
 
+    G = add_edge_attributes(G, organisatie_eenheid)
+    
+    if organisatie_eenheid is not 'Geen indeling':
+        G = kleur_nodes_volgens_kolom(G, organisatie_eenheid)
+    
     return G
 
 
@@ -117,7 +146,6 @@ def maak_units_tooltip_voor_naam(naam, onderwijs):
         units_tooltip = f"{n_units} uniek(e) blok(ken):\n" + "\n".join(units)
 
     return units_tooltip
-
 
 def maak_units_tooltip_voor_samenwerking(from_naam, to_naam, onderwijs):
 
@@ -137,10 +165,7 @@ def maak_units_tooltip_voor_samenwerking(from_naam, to_naam, onderwijs):
 
     return tooltip
     
-
-def create_onderwijs_graph(filename, onderwijs_jaar):
-
-    onderwijs = pd.read_csv(filename)
+def create_onderwijs_graph(onderwijs, onderwijs_jaar, organisatie_eenheid):
 
     if onderwijs_jaar != 'Alle jaren':
         jaar = int(onderwijs_jaar[:4])
@@ -160,6 +185,8 @@ def create_onderwijs_graph(filename, onderwijs_jaar):
         G.add_node(naam, label=naam, shape='dot', title=units_tooltip)
 
     G = add_nodes_voor_vaste_staf_nog_niet_in_netwerk(G)
+
+    G = add_node_attributes(G, vaste_staf_df=VASTE_STAF_DF)
 
     ### EDGES
     # Verzamel samenwerkingen binnen blokken
@@ -185,6 +212,11 @@ def create_onderwijs_graph(filename, onderwijs_jaar):
         samenwerking_units_tooltip = maak_units_tooltip_voor_samenwerking(k[0], k[1], onderwijs)
         G.add_edge(k[0], k[1], weight=v, value=v, title=samenwerking_units_tooltip, color='grey')
 
+    G = add_edge_attributes(G, organisatie_eenheid)
+    
+    if organisatie_eenheid is not 'Geen indeling':
+        G = kleur_nodes_volgens_kolom(G, organisatie_eenheid)
+    
     return G
 
     
@@ -199,17 +231,18 @@ def kleur_nodes_volgens_kolom(G, kolom_kleur, naam_kolom='Volledige naam', vaste
     node_kleuren = {}
     # voor elke node
     # check unieke waarde en set color attribute
-    for node_id in G.nodes:
+    for node_naam in G.nodes:
 
         # zoek via naam op welke affiliation iemand heeft
-        node_naam = G.nodes[node_id]['label']
         try:
             affiliation = vaste_staf_df.loc[vaste_staf_df[naam_kolom] == node_naam, kolom_kleur].values[0]
-            node_kleuren[node_id] = kleurdict[affiliation]
+            node_kleuren[node_naam] = kleurdict[affiliation]
         except IndexError:
             print(node_naam)
 
     # set dan voor alle nodes de kleur
     nx.set_node_attributes(G, node_kleuren, name="color")
+    
+    return G
 
 

@@ -1,37 +1,53 @@
 ### TODO ###
 
+# betere flow:
+# 1. Data prep
+# 1b. Data filteren volgens input (jaar)
+# 2. Graph prep: nodes en edges met alle attributes
+# 3. Draw graph
+
+
 # namen overal hetzelfde (vaste staf excel, pub json, onderwijs excel)
 
 # 3 jaar samen hetzelfde blok organiseren telt ook 3 keer mee voor de edge weight
 # wellicht is dat fair
 
-# andere gremia ook als edge tellen
-
+# rode knop:
 # optie om alleen ties met staf uit andere organisatie-eenheid te laten zien
 
 # metrics:
 # hoeveel ties in totaal? Met hoeveel personen werk je samen?
 # hoeveel ties inner/outer? Met hoeveel personen binnen je eigen organisatie-eenheid werk je samen?
+# percentage outer ties van totale ties, gemiddelde per organisatie_eenheid
 
-# Layout:
-# input opties boven ipv sidebar
-# onderzoek en onderwijs naast elkaar
-# st.columns?
+# Awesome feature!!
+# Kan ik de 2 plaatjes verbinden? Selecteer bijv. Mark links, en zie hem dan rechts ook highlighted
 
-
-
-
-from pyvis.network import Network
-import graph_prep as gp
 import streamlit as st
 import streamlit.components.v1 as components
 st.set_page_config(layout='wide')
 
+from pyvis.network import Network
+import pandas as pd
+import data_prep
+import graph_prep as gp
+import namen_prep
+import metrics
 
-VASTE_STAF_NAMEN = gp.get_vaste_staf_namelist('Data/HSR Vaste staf 01-05-2022.XLSX')
 
 
-'# HSR Samenwerking'
+
+
+
+
+VASTE_STAF_NAMEN = namen_prep.get_vaste_staf_namelist('Data/HSR Vaste staf 01-05-2022.XLSX')
+VASTE_STAF_DF = pd.read_excel('Data/HSR Vaste staf 01-05-2022.XLSX', sheet_name='Sheet1')
+
+
+
+
+
+'# Samenwerking binnen HSR'
 
 left, right = st.columns(2)
 
@@ -59,10 +75,8 @@ with right:
 
 
 
-G = gp.create_onderzoek_graph('Data/2020_2021_HSR_publications.json')
+G = gp.create_onderzoek_graph('Data/2020_2021_HSR_publications.json', organisatie_eenheid)
 
-if organisatie_eenheid is not 'Geen indeling':
-    gp.kleur_nodes_volgens_kolom(G, organisatie_eenheid)
 
 
 # Initiate PyVis network object
@@ -97,12 +111,9 @@ with left:
 
 
 
+onderwijs_data = data_prep.prep_onderwijs_data()
 
-
-H = gp.create_onderwijs_graph('Data/onderwijs.csv', onderwijs_jaar=onderwijs_jaar)
-
-if organisatie_eenheid is not 'Geen indeling':
-    gp.kleur_nodes_volgens_kolom(H, organisatie_eenheid)
+H = gp.create_onderwijs_graph(onderwijs_data, onderwijs_jaar, organisatie_eenheid)
 
 
 onderwijs_net = Network(height='700px', width='700px', bgcolor='white', font_color='black')
@@ -126,3 +137,15 @@ except:
 with right:
     components.html(HtmlFile.read(), height=700, width=700)
 
+
+if organisatie_eenheid is not 'Geen indeling':
+
+    f'## Samenwerking over {organisatie_eenheid.lower()} heen'
+
+    'Suspense...'
+
+    'Onderzoek metrics'
+    st.write(metrics.calc_outer_inner_ratio(G, organisatie_eenheid, VASTE_STAF_DF))
+
+    'Onderwijs metrics'
+    st.write(metrics.calc_outer_inner_ratio(H, organisatie_eenheid, VASTE_STAF_DF))
