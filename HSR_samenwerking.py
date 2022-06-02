@@ -142,10 +142,10 @@ if organisatie_eenheid is not 'Geen indeling':
 
     f'## Samenwerking over {organisatie_eenheid.lower()} heen'
 
-    'Suspense...'
+    '### Onderzoek'
+    onderzoek_metrics = metrics.calc_perc_externe_interne_samenwerking(G, organisatie_eenheid, VASTE_STAF_DF) 
+    st.table(onderzoek_metrics)
 
-    'Onderzoek metrics'
-    st.write(metrics.calc_outer_inner_ratio(G, organisatie_eenheid, VASTE_STAF_DF))
-
-    'Onderwijs metrics'
-    st.write(metrics.calc_outer_inner_ratio(H, organisatie_eenheid, VASTE_STAF_DF))
+    '### Onderwijs'
+    onderwijs_metrics = metrics.calc_perc_externe_interne_samenwerking(H, organisatie_eenheid, VASTE_STAF_DF)
+    st.table(onderwijs_metrics)

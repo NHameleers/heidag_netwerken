@@ -83,7 +83,7 @@ def add_edges(G, edgejson):
         # voeg edge alleen toe als deze van een vaste staf persoon naar een vaste staf persoon gaat
         if namen_prep.check_if_vaste_staf(from_name) and namen_prep.check_if_vaste_staf(to_name):
             w = e['label']
-            G.add_edge(from_name, to_name, value=w, title=f"{w} gezamenlijke publicatie(s)", color='grey')
+            G.add_edge(from_name, to_name, value=int(w), weight=int(w), title=f"{w} gezamenlijke publicatie(s)", color='grey')
 
     return G
 
@@ -97,7 +97,6 @@ def add_edge_attributes(G, organisatie_eenheid):
     
     for edge in G.edges:
         from_affiliation = G.nodes[edge[0]][organisatie_eenheid]
-        print(f'from affiliation of edge {edge}: {from_affiliation}')
         to_affiliation = G.nodes[edge[1]][organisatie_eenheid]
         if from_affiliation == to_affiliation:
             edge_attr_dict[edge] = {'is_inner': 1, 'is_outer': 0}
@@ -210,7 +209,7 @@ def create_onderwijs_graph(onderwijs, onderwijs_jaar, organisatie_eenheid):
     # dan kunnen we de edges toevoegen aan de graph
     for k, v in count_alle_samenwerkingen.items():
         samenwerking_units_tooltip = maak_units_tooltip_voor_samenwerking(k[0], k[1], onderwijs)
-        G.add_edge(k[0], k[1], weight=v, value=v, title=samenwerking_units_tooltip, color='grey')
+        G.add_edge(k[0], k[1], value=int(v), weight=int(v), title=samenwerking_units_tooltip, color='grey')
 
     G = add_edge_attributes(G, organisatie_eenheid)
     

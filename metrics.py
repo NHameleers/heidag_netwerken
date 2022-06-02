@@ -1,38 +1,75 @@
+import numpy as np
+import pandas as pd
+import math
 
-def calc_outer_inner_ratio(G, organisatie_eenheid, vaste_staf_df):
+def calc_perc_externe_interne_samenwerking(G, organisatie_eenheid, vaste_staf_df, verbose=False):
     
     # paar dingen nodig:
     # per affiliation (dat is een value binnen organisatie_eenheid):
         # telling van aantal personen binnen deze affiliation (om te normaliseren)
         # telling van aantal 
-    result = dict()
-    
-    for affiliation in vaste_staf_df[organisatie_eenheid].unique():
+    unique_affiliations = vaste_staf_df[organisatie_eenheid].unique()
+    all_metrics = [f'Alle samenwerkingen binnen {organisatie_eenheid}',
+     f'Samenwerkingen binnen {organisatie_eenheid}',
+     f'Samenwerkingen over {organisatie_eenheid} heen',
+     f'Aantal stafleden binnen {organisatie_eenheid}',
+     f'Percentage samenwerking over {organisatie_eenheid} heen (van alle samenwerkingen']
+    result = pd.DataFrame(index=unique_affiliations,
+    columns=all_metrics,
+    data=np.zeros((len(unique_affiliations), len(all_metrics))))
+
+    print(result)
+
+    for affiliation in unique_affiliations:
 
 
 
         # all nodes with that affiliation
         aff_nodes = [node for node, aff in G.nodes(data=organisatie_eenheid) if aff == affiliation]
 
-        result[affiliation] = {'total_edges': 0,
-        'total_inner': 0,
-        'total_outer': 0,
-        'total_staff': len(aff_nodes)}
+        result.loc[affiliation, f'Aantal stafleden binnen {organisatie_eenheid}'] = len(aff_nodes)
+        # result[affiliation] = {f'Alle samenwerkingen binnen {organisatie_eenheid}': 0,
+        # f'Samenwerkingen binnen {organisatie_eenheid}': 0,
+        # f'Samenwerkingen over {organisatie_eenheid} heen': 0,
+        # f'Aantal stafleden binnen {organisatie_eenheid}': len(aff_nodes)}
 
         for node in aff_nodes:
-            print('edges upcoming of...', node)
-            print(G.edges(node, data='is_inner'))
-            aff_inner_sum = sum([is_inner / 2 for f, t, is_inner in G.edges(node, data='is_inner')]) # /2 omdat we anders de inner edges dubbel tellen
-            result[affiliation]['total_inner'] += aff_inner_sum
 
-            aff_outer_sum = sum([is_outer for f, t, is_outer in G.edges(node, data='is_outer')])
-            result[affiliation]['total_outer'] += aff_outer_sum
+            # bereken de som van alle interne samenwerkingen (weights van inner edges)
+            #  voor deze node en deel door 2 omdat anders de inner nodes van een organisatie_eenheid/affiliation
+            #  dubbel geteld worden
+            weights_inner_edges = [d['weight'] for u, v, d in G.edges(node, data=True) if d['is_inner'] == 1]
+            aff_inner_sum = sum(weights_inner_edges) / 2 # /2 omdat we anders de inner edges dubbel tellen
+            result.loc[affiliation, f'Samenwerkingen binnen {organisatie_eenheid}'] += aff_inner_sum
 
-            result[affiliation]['total_edges'] += aff_inner_sum + aff_outer_sum 
+            # som van alle samenwerkingen across organisatie_eenheid
+            weights_outer_edges = [d['weight'] for u, v, d in G.edges(node, data=True) if d['is_outer'] == 1]
+            aff_outer_sum = sum(weights_outer_edges)
+            result.loc[affiliation, f'Samenwerkingen over {organisatie_eenheid} heen'] += aff_outer_sum
 
+            # totale samenwerkingen
+            result.loc[affiliation, f'Alle samenwerkingen binnen {organisatie_eenheid}'] += aff_inner_sum + aff_outer_sum 
+
+            if verbose:
+                print(node)
+                print('edges van node: ', G.edges(node, data=True))
+                print()
+                print('weights van inner edges (dus alle interne samenwerkingen van deze persoon', weights_inner_edges)
+                print()
+                print(result)
+                print()
+                print()
         try:
-            result[affiliation]['outer_inner_ratio'] = round(result[affiliation]['total_outer'] / result[affiliation]['total_edges'], 2) 
+            result.loc[affiliation, f'Percentage samenwerking over {organisatie_eenheid} heen (van alle samenwerkingen'] = round(100 * result.loc[affiliation, f'Samenwerkingen over {organisatie_eenheid} heen'] / result.loc[affiliation, f'Alle samenwerkingen binnen {organisatie_eenheid}']) 
         except ZeroDivisionError:
-            result[affiliation]['outer_inner_ratio'] = 0
-            
+            result.loc[affiliation, f'Percentage samenwerking over {organisatie_eenheid} heen (van alle samenwerkingen'] = 0
+        except ValueError:
+            result.loc[affiliation, f'Percentage samenwerking over {organisatie_eenheid} heen (van alle samenwerkingen'] = np.nan
+
+          
+    result[f'Percentage samenwerking over {organisatie_eenheid} heen (van alle samenwerkingen'] = [f'{d}%' if not math.isnan(d) else 'n.v.t.' for d in result[f'Percentage samenwerking over {organisatie_eenheid} heen (van alle samenwerkingen'].values]   
+
+    
+    result = result.style.format("{:.0f}", subset=all_metrics[:-1])
+
     return result
