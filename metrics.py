@@ -18,7 +18,8 @@ def calc_perc_externe_interne_samenwerking(G, organisatie_eenheid, vaste_staf_df
     columns=all_metrics,
     data=np.zeros((len(unique_affiliations), len(all_metrics))))
 
-    print(result)
+    if verbose:
+        print(result)
 
     for affiliation in unique_affiliations:
 

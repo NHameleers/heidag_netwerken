@@ -1,4 +1,5 @@
 import networkx as nx
+from pyvis.network import Network
 import json
 import pandas as pd
 from itertools import combinations
@@ -245,3 +246,26 @@ def kleur_nodes_volgens_kolom(G, kolom_kleur, naam_kolom='Volledige naam', vaste
     return G
 
 
+
+
+def nx_graph_to_pyvis_filepath(G, filename):
+    '''Takes a networkx graph object and filename as input, converts the nx graph to pyvis Network object
+    and saves that as html file for use on streamlit. Returns the filepath to the html file'''
+
+    # Initiate PyVis network object
+    onderzoek_net = Network(height='700px', width='700px', bgcolor='white', font_color='black')
+
+    # Take Networkx graph and translate it to a PyVis graph format
+    onderzoek_net.from_nx(G)
+
+    # Save and read graph as HTML file (on Streamlit Sharing)
+    try:
+        path = f'./tmp/{filename}'
+        onderzoek_net.save_graph(path)
+        return path
+
+    # Save and read graph as HTML file (locally)
+    except:
+        path = f'./html_files/{filename}'
+        onderzoek_net.save_graph(path)
+        return path

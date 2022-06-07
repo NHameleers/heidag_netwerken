@@ -27,7 +27,6 @@ import streamlit as st
 import streamlit.components.v1 as components
 st.set_page_config(layout='wide')
 
-from pyvis.network import Network
 import pandas as pd
 import data_prep
 import graph_prep as gp
@@ -51,101 +50,90 @@ VASTE_STAF_DF = pd.read_excel('Data/HSR Vaste staf 01-05-2022.XLSX', sheet_name=
 
 left, right = st.columns(2)
 
+keuze_opties = ['Onderzoek: Publicaties', 'Onderzoek: PhD Supervisie', 'Onderwijs: Blokgroepen']
 
 with left:
     organisatie_eenheid = st.selectbox(label='Organisatie eenheid:', options=['Geen indeling', 'Onderzoekslijn', 'Academische Werkplaats', 'Research Unit'])
-
-    '## Onderzoek'
-    'Aantal gezamenlijke publicaties (volgens Pure) die vaste stafleden delen in de jaren 2020 en 2021. Samenwerking is gedefiniëerd als co-auteurschap van een publicatie.'
+    linker_graph_keuze = st.selectbox(label='Netwerk links:', options=keuze_opties)
+    f'## {linker_graph_keuze}'
 
 with right:
     onderwijs_jaar = st.selectbox(label='Onderwijsjaar:', options=['Alle jaren', '2019-2020', '2020-2021', '2021-2022'])
-    
-    '## Onderwijs'
-    '''Samenwerking op gebied van onderwijs in de jaren 2019 t/m 2022. Samenwerking is gedefiniëerd als samen in de blokplanningsgroep zitten voor een blok.'''
+    rechter_graph_keuze = st.selectbox(label='Netwerk rechts:', options=keuze_opties, index=2)
+
+    f'## {rechter_graph_keuze}'
+
+
+
+
+def deliver_graph(keuze):
+    '''Takes option from input and returns the correct nx graph object'''
+    if keuze == 'Onderzoek: Publicaties':
+        return gp.create_onderzoek_graph('Data/2020_2021_HSR_publications.json', organisatie_eenheid)
+
+    elif keuze == 'Onderzoek: PhD Supervisie':
+        # TODO: Implement the correct graph!!        
+        return gp.create_onderzoek_graph('Data/2020_2021_HSR_publications.json', organisatie_eenheid)
+
+    else:
+        return gp.create_onderwijs_graph( data_prep.prep_onderwijs_data(), onderwijs_jaar, organisatie_eenheid)
+
+
+
+def deliver_explanation(keuze):
+    '''Takes option from input and returns the correct explanation of the network'''
+    if keuze == 'Onderzoek: Publicaties':
+        return 'Aantal gezamenlijke publicaties (volgens Pure) die vaste stafleden delen in de jaren 2020 en 2021. Samenwerking is gedefiniëerd als co-auteurschap van een publicatie.'
+
+
+    elif keuze == 'Onderzoek: PhD Supervisie':        
+        return 'Samenwerking op gebied van supervisie van PhD studenten. Samenwerking is gedefiniëerd als samen in een supervisieteam van een PhD student zitten.'
+
+
+    else:
+        return '''Samenwerking op gebied van onderwijs in de jaren 2019 t/m 2022. Samenwerking is gedefiniëerd als samen in de blokplanningsgroep zitten voor een blok.'''
 
 
 
 
 
+G_links = deliver_graph(linker_graph_keuze)
 
-
-
-
-
-
-
-G = gp.create_onderzoek_graph('Data/2020_2021_HSR_publications.json', organisatie_eenheid)
-
-
-
-# Initiate PyVis network object
-onderzoek_net = Network(height='700px', width='700px', bgcolor='white', font_color='black')
-
-# Take Networkx graph and translate it to a PyVis graph format
-onderzoek_net.from_nx(G)
-
-# Save and read graph as HTML file (on Streamlit Sharing)
-try:
-    path = './tmp'
-    onderzoek_net.save_graph(f'{path}/pyvis_graph.html')
-    HtmlFile = open(f'{path}/pyvis_graph.html', 'r', encoding='utf-8')
-
-# Save and read graph as HTML file (locally)
-except:
-    path = './html_files'
-    onderzoek_net.save_graph(f'{path}/pyvis_graph.html')
-    HtmlFile = open(f'{path}/pyvis_graph.html', 'r', encoding='utf-8')
+html_links = gp.nx_graph_to_pyvis_filepath(G_links, 'linker_net.html')  
 
 # Load HTML file in HTML component for display on Streamlit page
 with left:
-    components.html(HtmlFile.read(), height=700, width=700)
+
+    with open(html_links, 'r', encoding='utf-8') as HtmlFile:
+        components.html(HtmlFile.read(), height=700, width=700)
 
 
 
 
+G_rechts = deliver_graph(rechter_graph_keuze)
 
-
-
-
-
-
-
-onderwijs_data = data_prep.prep_onderwijs_data()
-
-H = gp.create_onderwijs_graph(onderwijs_data, onderwijs_jaar, organisatie_eenheid)
-
-
-onderwijs_net = Network(height='700px', width='700px', bgcolor='white', font_color='black')
-
-# Take Networkx graph and translate it to a PyVis graph format
-onderwijs_net.from_nx(H)
-
-# Save and read graph as HTML file (on Streamlit Sharing)
-try:
-    path = './tmp'
-    onderwijs_net.save_graph(f'{path}/pyvis_graph.html')
-    HtmlFile = open(f'{path}/pyvis_graph.html', 'r', encoding='utf-8')
-
-# Save and read graph as HTML file (locally)
-except:
-    path = './html_files'
-    onderwijs_net.save_graph(f'{path}/pyvis_graph.html')
-    HtmlFile = open(f'{path}/pyvis_graph.html', 'r', encoding='utf-8')
+html_rechts = gp.nx_graph_to_pyvis_filepath(G_rechts, 'rechter_net.html')    
 
 # Load HTML file in HTML component for display on Streamlit page
 with right:
-    components.html(HtmlFile.read(), height=700, width=700)
+
+    with open(html_rechts, 'r', encoding='utf-8') as HtmlFile:
+        components.html(HtmlFile.read(), height=700, width=700)
+
+
+
+
+
 
 
 if organisatie_eenheid is not 'Geen indeling':
 
     f'## Samenwerking over {organisatie_eenheid.lower()} heen'
 
-    '### Onderzoek'
-    onderzoek_metrics = metrics.calc_perc_externe_interne_samenwerking(G, organisatie_eenheid, VASTE_STAF_DF) 
-    st.table(onderzoek_metrics)
+    f'### {linker_graph_keuze}'
+    linker_metrics = metrics.calc_perc_externe_interne_samenwerking(G_links, organisatie_eenheid, VASTE_STAF_DF) 
+    st.table(linker_metrics)
 
-    '### Onderwijs'
-    onderwijs_metrics = metrics.calc_perc_externe_interne_samenwerking(H, organisatie_eenheid, VASTE_STAF_DF)
+    f'### {rechter_graph_keuze}'
+    onderwijs_metrics = metrics.calc_perc_externe_interne_samenwerking(G_rechts, organisatie_eenheid, VASTE_STAF_DF)
     st.table(onderwijs_metrics)
