@@ -53,16 +53,18 @@ left, right = st.columns(2)
 keuze_opties = ['Onderzoek: Publicaties', 'Onderzoek: PhD Supervisie', 'Onderwijs: Blokgroepen']
 
 with left:
-    organisatie_eenheid = st.selectbox(label='Organisatie eenheid:', options=['Geen indeling', 'Onderzoekslijn', 'Academische Werkplaats', 'Research Unit'])
     linker_graph_keuze = st.selectbox(label='Netwerk links:', options=keuze_opties)
+
+    organisatie_eenheid = st.selectbox(label='Organisatie eenheid:', options=['Geen indeling', 'Onderzoekslijn', 'Academische Werkplaats', 'Research Unit'])
+
     f'## {linker_graph_keuze}'
 
 with right:
-    onderwijs_jaar = st.selectbox(label='Onderwijsjaar:', options=['Alle jaren', '2019-2020', '2020-2021', '2021-2022'])
     rechter_graph_keuze = st.selectbox(label='Netwerk rechts:', options=keuze_opties, index=2)
 
-    f'## {rechter_graph_keuze}'
+    onderwijs_jaar = st.selectbox(label='Onderwijsjaar:', options=['Alle jaren', '2019-2020', '2020-2021', '2021-2022'])
 
+    f'## {rechter_graph_keuze}'
 
 
 
@@ -72,11 +74,10 @@ def deliver_graph(keuze):
         return gp.create_onderzoek_graph('Data/2020_2021_HSR_publications.json', organisatie_eenheid)
 
     elif keuze == 'Onderzoek: PhD Supervisie':
-        # TODO: Implement the correct graph!!        
-        return gp.create_onderzoek_graph('Data/2020_2021_HSR_publications.json', organisatie_eenheid)
+        return gp.create_supervisie_graph(data_prep.prep_supervisie_data(), organisatie_eenheid)
 
     else:
-        return gp.create_onderwijs_graph( data_prep.prep_onderwijs_data(), onderwijs_jaar, organisatie_eenheid)
+        return gp.create_onderwijs_graph(data_prep.prep_onderwijs_data(), onderwijs_jaar, organisatie_eenheid)
 
 
 

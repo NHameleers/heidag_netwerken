@@ -135,6 +135,57 @@ def create_onderzoek_graph(json_filename, organisatie_eenheid):
 
 
 
+##### ONDERZOEK SUPERVISIE GRAPH ####
+
+def create_supervisie_graph(supervisie_df, organisatie_eenheid):
+    
+    G = nx.Graph()
+
+    # add nodes from supervisie data
+    ### NODES
+    stafnamen = supervisie_df.Name.unique()
+    for naam in stafnamen:
+        
+        # units_tooltip = maak_units_tooltip_voor_naam(naam, supervisie_df)
+
+        G.add_node(naam, label=naam, shape='dot') # , title=units_tooltip)
+    
+    G = add_nodes_voor_vaste_staf_nog_niet_in_netwerk(G)
+
+    G = add_node_attributes(G, vaste_staf_df=VASTE_STAF_DF)
+
+    # add edges
+    # Verzamel samenwerkingen binnen supervisie teams
+    alle_samenwerkingen = []
+
+    for phd in supervisie_df['PhD name'].unique():
+
+        # for the edges:
+        # get rows of that phd student
+        # get staff supervising that student
+        samenwerking = sorted(supervisie_df.loc[supervisie_df['PhD name'] == phd, 'Name'].values)
+
+        # get all combinations of 2 of staff supervising the phd student
+        for c in list(combinations(samenwerking, 2)):
+            alle_samenwerkingen.append(c)
+
+    # alle_samenwerkingen is nu een lijst van 2-tuples.
+    # om de edges gewicht te kunnen geven moeten we tellen hoe vaak elke 2-tuple voorkomt
+    count_alle_samenwerkingen = Counter(alle_samenwerkingen)
+    
+    # dan kunnen we de edges toevoegen aan de graph
+    for k, v in count_alle_samenwerkingen.items():
+        G.add_edge(k[0], k[1], value=int(v), weight=int(v), color='grey', title=f'Begeleiden samen {v} PhD(s)')
+
+    G = add_edge_attributes(G, organisatie_eenheid)
+
+    if organisatie_eenheid is not 'Geen indeling':
+        G = kleur_nodes_volgens_kolom(G, organisatie_eenheid)
+    
+    return G
+
+
+
 ########## ONDERWIJS GRAPH
 
 def maak_units_tooltip_voor_naam(naam, onderwijs):
@@ -197,7 +248,7 @@ def create_onderwijs_graph(onderwijs, onderwijs_jaar, organisatie_eenheid):
         # for the edges:
         # get rows of that unityear
         # get staff in that unityear
-        samenwerking = onderwijs.loc[onderwijs.UnitYear == unityear, 'Naam'].values
+        samenwerking = sorted(onderwijs.loc[onderwijs.UnitYear == unityear, 'Naam'].values)
 
         # get all combinations of 2 of staff in that unityear
         for c in list(combinations(samenwerking, 2)):

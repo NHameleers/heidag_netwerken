@@ -9,6 +9,16 @@ def onderwijsnaam_naar_onderzoeksnaam(naam, naam_mapping=NAAM_MAPPING):
     return naam_mapping.loc[naam_mapping.OnderwijsNaam == naam, 'Volledige naam'].values[0]
 
 
+
+def supervisornaam_naar_onderzoeksnaam(naam, naam_mapping=NAAM_MAPPING):
+    try:
+        return naam_mapping.loc[naam_mapping.SupervisorNaam == naam, 'Volledige naam'].values[0]
+    except IndexError as e:
+        print('Error bij naam: |' , naam, '|')
+        raise IndexError
+
+
+
 @st.cache(suppress_st_warning=True)
 def get_vaste_staf_namelist(excelfile, naam_kolom='Volledige naam'):
     namen = pd.read_excel(excelfile, sheet_name='Sheet1')
@@ -29,6 +39,7 @@ def check_if_vaste_staf_achternaam(achternaam, vaste_staf_namen=VASTE_STAF_NAMEN
     vaste_staf_achternamen = [naam.split(' ')[-1] for naam in vaste_staf_namen]
 
     return achternaam in vaste_staf_achternamen
+
 
 
 
