@@ -6,3 +6,4 @@ streamlit==1.0.0
 networkx==2.6.3
 pyvis==0.2.1
 openpyxl==3.0.10
+protobuf~=3.19.0
