@@ -48,6 +48,17 @@ VASTE_STAF_DF = pd.read_excel('Data/HSR Vaste staf 01-05-2022.XLSX', sheet_name=
 
 '# Samenwerking binnen HSR'
 
+'''## Disclaimer!
+Wees voorzichtig met interpretatie van de visualisaties en de cijfers. Denk bijvoorbeeld aan:
+* De zichtbare samenwerking is sterk afhankelijk van de definitie van een tie/edge. Let daarom steeds op hoe samenwerking is gedefiniëerd per onderwerp.
+* De visualisaties en tabellen betreffen slechts een bepaalde afgebakende periode.
+* De cijfers laten aantal samenwerkingen zien, maar niet aantal publicaties, PhD studenten, etc. Ga dus niet proberen om productie te vergelijken m.b.v. deze cijfers.
+* Data betreffen HSR vaste staf, maar vaste staf zijn betekent niet een full-time aanstelling (dus bijv. 17 stafleden per onderzoekslijn betekent niet evenveel fte).
+* Er is geen rekening gehouden met percentage onderwijsaanstelling (of uberhaupt onderwijsaanstelling hebben)
+* Terugkomonderwijs voor de coschappen is niet meegenomen
+'''
+
+
 left, right = st.columns(2)
 
 keuze_opties = ['Onderzoek: Publicaties', 'Onderzoek: PhD Supervisie', 'Onderwijs: Blokgroepen']
@@ -55,7 +66,9 @@ keuze_opties = ['Onderzoek: Publicaties', 'Onderzoek: PhD Supervisie', 'Onderwij
 with left:
     linker_graph_keuze = st.selectbox(label='Netwerk links:', options=keuze_opties)
 
-    organisatie_eenheid = st.selectbox(label='Organisatie eenheid:', options=['Geen indeling', 'Onderzoekslijn', 'Academische Werkplaats', 'Research Unit'])
+    organisatie_eenheid = st.selectbox(label='Organisatie eenheid:',
+                                       options=['Geen indeling', 'Onderzoekslijn', 'Academische Werkplaats', 'Research Unit'],
+                                       index=3)
 
     f'## {linker_graph_keuze}'
 
@@ -88,7 +101,7 @@ def deliver_explanation(keuze):
 
 
     elif keuze == 'Onderzoek: PhD Supervisie':        
-        return 'Samenwerking op gebied van supervisie van PhD studenten. Samenwerking is gedefiniëerd als samen in een supervisieteam van een PhD student zitten.'
+        return 'Samenwerking is gedefiniëerd als samen in een supervisieteam van een HSR PhD student zitten (huidige en na juli 2021 gepromoveerde).'
 
 
     else:
@@ -105,8 +118,11 @@ html_links = gp.nx_graph_to_pyvis_filepath(G_links, 'linker_net.html')
 # Load HTML file in HTML component for display on Streamlit page
 with left:
 
+    st.write(deliver_explanation(linker_graph_keuze))
+
     with open(html_links, 'r', encoding='utf-8') as HtmlFile:
         components.html(HtmlFile.read(), height=700, width=700)
+
 
 
 
@@ -118,6 +134,8 @@ html_rechts = gp.nx_graph_to_pyvis_filepath(G_rechts, 'rechter_net.html')
 # Load HTML file in HTML component for display on Streamlit page
 with right:
 
+    st.write(deliver_explanation(rechter_graph_keuze))
+
     with open(html_rechts, 'r', encoding='utf-8') as HtmlFile:
         components.html(HtmlFile.read(), height=700, width=700)
 
@@ -126,8 +144,9 @@ with right:
 
 
 
-
 if organisatie_eenheid is not 'Geen indeling':
+
+
 
     f'## Samenwerking over {organisatie_eenheid.lower()} heen'
 
@@ -138,3 +157,6 @@ if organisatie_eenheid is not 'Geen indeling':
     f'### {rechter_graph_keuze}'
     onderwijs_metrics = metrics.calc_perc_externe_interne_samenwerking(G_rechts, organisatie_eenheid, VASTE_STAF_DF)
     st.table(onderwijs_metrics)
+
+
+
