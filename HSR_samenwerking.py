@@ -68,7 +68,7 @@ with left:
 
     organisatie_eenheid = st.selectbox(label='Organisatie eenheid:',
                                        options=['Geen indeling', 'Onderzoekslijn', 'Research Unit'],
-                                       index=3)
+                                       index=2)
 
     f'## {linker_graph_keuze}'
 
