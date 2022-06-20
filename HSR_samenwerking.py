@@ -67,13 +67,13 @@ with left:
     linker_graph_keuze = st.selectbox(label='Netwerk links:', options=keuze_opties)
 
     organisatie_eenheid = st.selectbox(label='Organisatie eenheid:',
-                                       options=['Geen indeling', 'Onderzoekslijn', 'Academische Werkplaats', 'Research Unit'],
+                                       options=['Geen indeling', 'Onderzoekslijn', 'Research Unit'],
                                        index=3)
 
     f'## {linker_graph_keuze}'
 
 with right:
-    rechter_graph_keuze = st.selectbox(label='Netwerk rechts:', options=keuze_opties, index=2)
+    rechter_graph_keuze = st.selectbox(label='Netwerk rechts:', options=keuze_opties, index=1)
 
     # onderwijs_jaar = st.selectbox(label='Onderwijsjaar:', options=['Alle jaren', '2019-2020', '2020-2021', '2021-2022'])
     onderwijs_jaar = 'Alle jaren'
@@ -87,6 +87,10 @@ with right:
     
     f'## {rechter_graph_keuze}'
 
+names_visible = st.checkbox('Laat namen zien')
+label_visibility = '#10000000'
+if names_visible:
+    label_visibility = 'black'
 
 
 def deliver_graph(keuze):
@@ -113,7 +117,7 @@ def deliver_explanation(keuze):
 
 
     else:
-        return '''Samenwerking op gebied van onderwijs in de jaren 2019 t/m 2022. Samenwerking is gedefiniëerd als samen in de blokplanningsgroep zitten voor een blok.'''
+        return '''Samenwerking op gebied van onderwijs in de jaren 2019 t/m 2022. Samenwerking is gedefiniëerd als samen in een blokplanningsgroep zitten (en coördinatorenoverleg als aangevinkt).'''
 
 
 
@@ -121,7 +125,7 @@ def deliver_explanation(keuze):
 
 G_links = deliver_graph(linker_graph_keuze)
 
-html_links = gp.nx_graph_to_pyvis_filepath(G_links, 'linker_net.html')  
+html_links = gp.nx_graph_to_pyvis_filepath(G_links, 'linker_net.html', font_color=label_visibility)  
 
 # Load HTML file in HTML component for display on Streamlit page
 with left:
@@ -137,7 +141,7 @@ with left:
 
 G_rechts = deliver_graph(rechter_graph_keuze)
 
-html_rechts = gp.nx_graph_to_pyvis_filepath(G_rechts, 'rechter_net.html')    
+html_rechts = gp.nx_graph_to_pyvis_filepath(G_rechts, 'rechter_net.html', font_color=label_visibility)    
 
 # Load HTML file in HTML component for display on Streamlit page
 with right:

@@ -23,8 +23,6 @@ def calc_perc_externe_interne_samenwerking(G, organisatie_eenheid, vaste_staf_df
 
     for affiliation in unique_affiliations:
 
-
-
         # all nodes with that affiliation
         aff_nodes = [node for node, aff in G.nodes(data=organisatie_eenheid) if aff == affiliation]
 

@@ -304,12 +304,12 @@ def kleur_nodes_volgens_kolom(G, kolom_kleur, naam_kolom='Volledige naam', vaste
 
 
 
-def nx_graph_to_pyvis_filepath(G, filename):
+def nx_graph_to_pyvis_filepath(G, filename, font_color='black'):
     '''Takes a networkx graph object and filename as input, converts the nx graph to pyvis Network object
     and saves that as html file for use on streamlit. Returns the filepath to the html file'''
 
     # Initiate PyVis network object
-    onderzoek_net = Network(height='700px', width='700px', bgcolor='white', font_color='black')
+    onderzoek_net = Network(height='700px', width='700px', bgcolor='white', font_color=font_color)
 
     # Take Networkx graph and translate it to a PyVis graph format
     onderzoek_net.from_nx(G)
