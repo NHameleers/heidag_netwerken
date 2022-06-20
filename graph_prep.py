@@ -216,12 +216,16 @@ def maak_units_tooltip_voor_samenwerking(from_naam, to_naam, onderwijs):
 
     return tooltip
     
-def create_onderwijs_graph(onderwijs, onderwijs_jaar, organisatie_eenheid):
+def create_onderwijs_graph(onderwijsdata, onderwijs_jaar, organisatie_eenheid, excl_coordinatorenoverleg):
+
+    onderwijs = onderwijsdata.copy()
 
     if onderwijs_jaar != 'Alle jaren':
         jaar = int(onderwijs_jaar[:4])
         onderwijs = onderwijs[onderwijs.Year == jaar]
 
+    if excl_coordinatorenoverleg:
+        onderwijs = onderwijs.loc[~onderwijs.Unit.str.contains('COOR', na=False), ]
 
     G = nx.Graph()
 
@@ -260,8 +264,9 @@ def create_onderwijs_graph(onderwijs, onderwijs_jaar, organisatie_eenheid):
     
     # dan kunnen we de edges toevoegen aan de graph
     for k, v in count_alle_samenwerkingen.items():
-        samenwerking_units_tooltip = maak_units_tooltip_voor_samenwerking(k[0], k[1], onderwijs)
-        G.add_edge(k[0], k[1], value=int(v), weight=int(v), title=samenwerking_units_tooltip, color='grey')
+        if k[0]!= k[1]: # als het een tie is tussen 2 verschillende personen, en niet met zichzelf
+            samenwerking_units_tooltip = maak_units_tooltip_voor_samenwerking(k[0], k[1], onderwijs)
+            G.add_edge(k[0], k[1], value=int(v), weight=int(v), title=samenwerking_units_tooltip, color='grey')
 
     G = add_edge_attributes(G, organisatie_eenheid)
     

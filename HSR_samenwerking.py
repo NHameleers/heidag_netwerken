@@ -75,8 +75,16 @@ with left:
 with right:
     rechter_graph_keuze = st.selectbox(label='Netwerk rechts:', options=keuze_opties, index=2)
 
-    onderwijs_jaar = st.selectbox(label='Onderwijsjaar:', options=['Alle jaren', '2019-2020', '2020-2021', '2021-2022'])
+    # onderwijs_jaar = st.selectbox(label='Onderwijsjaar:', options=['Alle jaren', '2019-2020', '2020-2021', '2021-2022'])
+    onderwijs_jaar = 'Alle jaren'
 
+    excl_coordinatorenoverleg_choice = st.selectbox(label='Samenwerking in coördinatorenoverleg:',
+     options=["Coordinatorenoverleg includeren", "Coordinatorenoverleg excluderen"],
+     index=1)
+    
+    coordinatorenoverleg_translate = {"Coordinatorenoverleg includeren": False, "Coordinatorenoverleg excluderen": True}
+    excl_coordinatorenoverleg = coordinatorenoverleg_translate[excl_coordinatorenoverleg_choice]
+    
     f'## {rechter_graph_keuze}'
 
 
@@ -90,7 +98,7 @@ def deliver_graph(keuze):
         return gp.create_supervisie_graph(data_prep.prep_supervisie_data(), organisatie_eenheid)
 
     else:
-        return gp.create_onderwijs_graph(data_prep.prep_onderwijs_data(), onderwijs_jaar, organisatie_eenheid)
+        return gp.create_onderwijs_graph(data_prep.prep_onderwijs_data(), onderwijs_jaar, organisatie_eenheid, excl_coordinatorenoverleg=excl_coordinatorenoverleg)
 
 
 
