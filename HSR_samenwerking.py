@@ -103,7 +103,7 @@ organisatie_eenheid_meervoud = 'onderzoekslijnen'
 if organisatie_eenheid == 'Research Unit':
     organisatie_eenheid_meervoud = 'research units'
 
-remove_inner_edges = st.checkbox(f'Laat alleen samenwerking tussen {organisatie_eenheid_meervoud} zien')
+remove_inner_edges = st.checkbox(f'Laat alleen samenwerking tussen {organisatie_eenheid_meervoud} zien in visualisaties')
 
 
 
@@ -173,15 +173,19 @@ with right:
 
 if organisatie_eenheid is not 'Geen indeling':
 
-    f'## Samenwerking tussen {organisatie_eenheid_meervoud}'
+    f'## Samenwerking tussen {organisatie_eenheid_meervoud} in cijfers'
 
-    f'### {linker_graph_keuze}'
-    linker_metrics = metrics.calc_perc_externe_interne_samenwerking(G_links, organisatie_eenheid, VASTE_STAF_DF) 
-    st.table(linker_metrics)
+    if remove_inner_edges:
+        f'Deze cijfers zijn niet beschikbaar wanneer "Laat alleen samenwerking tussen {organisatie_eenheid_meervoud} zien" aan staat.'
+    else:
 
-    f'### {rechter_graph_keuze}'
-    onderwijs_metrics = metrics.calc_perc_externe_interne_samenwerking(G_rechts, organisatie_eenheid, VASTE_STAF_DF)
-    st.table(onderwijs_metrics)
+        f'### {linker_graph_keuze}'
+        linker_metrics = metrics.calc_perc_externe_interne_samenwerking(G_links, organisatie_eenheid, VASTE_STAF_DF) 
+        st.table(linker_metrics)
+
+        f'### {rechter_graph_keuze}'
+        onderwijs_metrics = metrics.calc_perc_externe_interne_samenwerking(G_rechts, organisatie_eenheid, VASTE_STAF_DF)
+        st.table(onderwijs_metrics)
 
 
 
