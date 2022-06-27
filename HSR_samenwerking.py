@@ -46,18 +46,18 @@ VASTE_STAF_DF = pd.read_excel('Data/HSR Vaste staf 01-05-2022.XLSX', sheet_name=
 
 
 
+with st.expander('Disclaimer!'):
+    '''
+    Wees voorzichtig met interpretatie van de visualisaties en de cijfers. Denk bijvoorbeeld aan:
+    * De zichtbare samenwerking is sterk afhankelijk van de definitie van een tie/edge. Let daarom steeds op hoe samenwerking is gedefiniëerd per onderwerp.
+    * De visualisaties en tabellen betreffen slechts een bepaalde afgebakende periode.
+    * De cijfers laten aantal samenwerkingen zien, maar niet aantal publicaties, PhD studenten, etc. Ga dus niet proberen om productie van onderzoekslijn of research unit te vergelijken m.b.v. deze cijfers.
+    * Data betreffen HSR vaste staf, maar vaste staf zijn betekent niet een full-time aanstelling (dus bijv. 17 stafleden per onderzoekslijn betekent niet evenveel fte).
+    * Er is geen rekening gehouden met percentage onderwijsaanstelling (of uberhaupt onderwijsaanstelling hebben)
+    * Terugkomonderwijs voor de coschappen is niet meegenomen
+    '''
+
 '# Samenwerking binnen HSR'
-
-'''## Disclaimer!
-Wees voorzichtig met interpretatie van de visualisaties en de cijfers. Denk bijvoorbeeld aan:
-* De zichtbare samenwerking is sterk afhankelijk van de definitie van een tie/edge. Let daarom steeds op hoe samenwerking is gedefiniëerd per onderwerp.
-* De visualisaties en tabellen betreffen slechts een bepaalde afgebakende periode.
-* De cijfers laten aantal samenwerkingen zien, maar niet aantal publicaties, PhD studenten, etc. Ga dus niet proberen om productie te vergelijken m.b.v. deze cijfers.
-* Data betreffen HSR vaste staf, maar vaste staf zijn betekent niet een full-time aanstelling (dus bijv. 17 stafleden per onderzoekslijn betekent niet evenveel fte).
-* Er is geen rekening gehouden met percentage onderwijsaanstelling (of uberhaupt onderwijsaanstelling hebben)
-* Terugkomonderwijs voor de coschappen is niet meegenomen
-'''
-
 
 left, right = st.columns(2)
 
@@ -68,7 +68,7 @@ with left:
 
     organisatie_eenheid = st.selectbox(label='Organisatie eenheid:',
                                        options=['Geen indeling', 'Onderzoekslijn', 'Research Unit'],
-                                       index=2)
+                                       index=1)
 
     f'## {linker_graph_keuze}'
 
@@ -78,12 +78,19 @@ with right:
     # onderwijs_jaar = st.selectbox(label='Onderwijsjaar:', options=['Alle jaren', '2019-2020', '2020-2021', '2021-2022'])
     onderwijs_jaar = 'Alle jaren'
 
-    excl_coordinatorenoverleg_choice = st.selectbox(label='Samenwerking in coördinatorenoverleg:',
-     options=["Coordinatorenoverleg includeren", "Coordinatorenoverleg excluderen"],
-     index=1)
+
+    coordinatorenoverleg_translate_dict = {"Coordinatorenoverleg includeren": False, "Coordinatorenoverleg excluderen": True}
+
+    if rechter_graph_keuze == keuze_opties[-1]: # alleen voor onderwijs is deze enabled
+        excl_coordinatorenoverleg_choice = st.selectbox(label='Samenwerking in coördinatorenoverleg:',
+        options=["Coordinatorenoverleg includeren", "Coordinatorenoverleg excluderen"],
+        index=1)
+    else:
+        excl_coordinatorenoverleg_choice = st.selectbox(label='Samenwerking in coördinatorenoverleg:',
+        options=["Coordinatorenoverleg includeren", "Coordinatorenoverleg excluderen"],
+        index=1, disabled=True)
     
-    coordinatorenoverleg_translate = {"Coordinatorenoverleg includeren": False, "Coordinatorenoverleg excluderen": True}
-    excl_coordinatorenoverleg = coordinatorenoverleg_translate[excl_coordinatorenoverleg_choice]
+    excl_coordinatorenoverleg = coordinatorenoverleg_translate_dict[excl_coordinatorenoverleg_choice]
     
     f'## {rechter_graph_keuze}'
 
