@@ -110,7 +110,9 @@ def add_edge_attributes(G, organisatie_eenheid):
 
 
 
-def create_onderzoek_graph(json_filename, organisatie_eenheid):
+
+
+def create_onderzoek_graph(json_filename, organisatie_eenheid, remove_inner_edges=False):
 
     with open(json_filename, 'r', encoding='utf-8') as infile:
         d = json.load(infile)
@@ -130,6 +132,10 @@ def create_onderzoek_graph(json_filename, organisatie_eenheid):
     if organisatie_eenheid is not 'Geen indeling':
         G = kleur_nodes_volgens_kolom(G, organisatie_eenheid)
     
+    if remove_inner_edges:
+        inner_edges = [(u, v) for u, v, d in G.edges(data=True) if d['is_inner'] == 1]
+        G.remove_edges_from(inner_edges)
+
     return G
 
 
@@ -137,7 +143,7 @@ def create_onderzoek_graph(json_filename, organisatie_eenheid):
 
 ##### ONDERZOEK SUPERVISIE GRAPH ####
 
-def create_supervisie_graph(supervisie_df, organisatie_eenheid):
+def create_supervisie_graph(supervisie_df, organisatie_eenheid, remove_inner_edges=False):
     
     G = nx.Graph()
 
@@ -182,6 +188,10 @@ def create_supervisie_graph(supervisie_df, organisatie_eenheid):
     if organisatie_eenheid is not 'Geen indeling':
         G = kleur_nodes_volgens_kolom(G, organisatie_eenheid)
     
+    if remove_inner_edges:
+        inner_edges = [(u, v) for u, v, d in G.edges(data=True) if d['is_inner'] == 1]
+        G.remove_edges_from(inner_edges)
+
     return G
 
 
@@ -216,7 +226,7 @@ def maak_units_tooltip_voor_samenwerking(from_naam, to_naam, onderwijs):
 
     return tooltip
     
-def create_onderwijs_graph(onderwijsdata, onderwijs_jaar, organisatie_eenheid, excl_coordinatorenoverleg):
+def create_onderwijs_graph(onderwijsdata, onderwijs_jaar, organisatie_eenheid, excl_coordinatorenoverleg, remove_inner_edges=False):
 
     onderwijs = onderwijsdata.copy()
 
@@ -272,7 +282,11 @@ def create_onderwijs_graph(onderwijsdata, onderwijs_jaar, organisatie_eenheid, e
     
     if organisatie_eenheid is not 'Geen indeling':
         G = kleur_nodes_volgens_kolom(G, organisatie_eenheid)
-    
+
+    if remove_inner_edges:
+        inner_edges = [(u, v) for u, v, d in G.edges(data=True) if d['is_inner'] == 1]
+        G.remove_edges_from(inner_edges)
+        
     return G
 
     

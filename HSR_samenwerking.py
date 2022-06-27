@@ -99,17 +99,18 @@ label_visibility = '#10000000'
 if names_visible:
     label_visibility = 'black'
 
+remove_inner_edges = st.checkbox(f'Laat alleen samenwerking tussen {organisatie_eenheid} zien')
 
 def deliver_graph(keuze):
     '''Takes option from input and returns the correct nx graph object'''
     if keuze == 'Onderzoek: Publicaties':
-        return gp.create_onderzoek_graph('Data/2020_2021_HSR_publications.json', organisatie_eenheid)
+        return gp.create_onderzoek_graph('Data/2020_2021_HSR_publications.json', organisatie_eenheid, remove_inner_edges=remove_inner_edges)
 
     elif keuze == 'Onderzoek: PhD Supervisie':
-        return gp.create_supervisie_graph(data_prep.prep_supervisie_data(), organisatie_eenheid)
+        return gp.create_supervisie_graph(data_prep.prep_supervisie_data(), organisatie_eenheid, remove_inner_edges=remove_inner_edges)
 
     else:
-        return gp.create_onderwijs_graph(data_prep.prep_onderwijs_data(), onderwijs_jaar, organisatie_eenheid, excl_coordinatorenoverleg=excl_coordinatorenoverleg)
+        return gp.create_onderwijs_graph(data_prep.prep_onderwijs_data(), onderwijs_jaar, organisatie_eenheid, excl_coordinatorenoverleg=excl_coordinatorenoverleg, remove_inner_edges=remove_inner_edges)
 
 
 
