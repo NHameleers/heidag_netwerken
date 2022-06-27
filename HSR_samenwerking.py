@@ -99,7 +99,14 @@ label_visibility = '#10000000'
 if names_visible:
     label_visibility = 'black'
 
-remove_inner_edges = st.checkbox(f'Laat alleen samenwerking tussen {organisatie_eenheid} zien')
+organisatie_eenheid_meervoud = 'onderzoekslijnen'
+if organisatie_eenheid == 'Research Unit':
+    organisatie_eenheid_meervoud = 'research units'
+
+remove_inner_edges = st.checkbox(f'Laat alleen samenwerking tussen {organisatie_eenheid_meervoud} zien')
+
+
+
 
 def deliver_graph(keuze):
     '''Takes option from input and returns the correct nx graph object'''
@@ -166,9 +173,7 @@ with right:
 
 if organisatie_eenheid is not 'Geen indeling':
 
-
-
-    f'## Samenwerking over {organisatie_eenheid.lower()} heen'
+    f'## Samenwerking tussen {organisatie_eenheid_meervoud}'
 
     f'### {linker_graph_keuze}'
     linker_metrics = metrics.calc_perc_externe_interne_samenwerking(G_links, organisatie_eenheid, VASTE_STAF_DF) 
